@@ -31,7 +31,6 @@ endif
 
 
 buildApp: binFile clear appBuilder
-	"${build}${Target}"
 
 appBuilder: ${OBJ}
 	${CC} -o ${build}${Target} $^ ${resources} ${Libs} ${CFlags} ${LFlags}

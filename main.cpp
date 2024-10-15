@@ -1,9 +1,14 @@
 #include "Terminal.h"
 #include "IOSystem.h"
 
-int main() {
-    setupLogging("./log/log.txt");
-    Terminal terminal;
+int main(int argc, char** argv) {
+    setupLogging("/home/urban/Desktop/Dop/Terminal/log/log.txt");
+
+    
+    Terminal terminal(argc, argv);
+
+
+
     while(terminal.isRunning()) {
         terminal.processCommand();
     }

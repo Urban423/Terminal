@@ -7,7 +7,7 @@
 class Terminal
 {
 public:
-     Terminal();
+     Terminal(int argc, char** argv);
     ~Terminal();
 
     void killAll();

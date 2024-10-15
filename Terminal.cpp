@@ -77,27 +77,11 @@ void custom_cat(const char *filename) {
 }
 
 void killProcess(pid_t pid, int signal, int* pids, int& size) {
-    int found = 0;
-    for (int i = 0; i < size; i++) {
-        if (pids[i] == pid) {
-            found = 1;
-            for (int j = i; j < size - 1; j++) {
-                pids[j] = pids[j + 1];
-            }
-            size--;  
-            break;
-        }
-    }
 
-    if (!found) {
-        printf("PID: %d not found in the array.\n", pid);
-        return;
-    }
 
 
     if (kill(pid, signal) == -1) {
         printError("Error sending signal");
-        exit(EXIT_FAILURE);
     } else {
         print("Successfully sent signal %d to process %d\n", signal, pid);
     }
@@ -127,6 +111,7 @@ int changeProcessPriority(pid_t pid, int niceValue) {
 int executeProcess(int argc, char** argv) {
     char processName[MAX_FILE_NAME_LENGTH];
     char filename[MAX_FILE_NAME_LENGTH];
+    char systemProcessPath[MAX_FILE_NAME_LENGTH];
     int isBackground = 0;
     if (argv[0][0] == '&') {
         isBackground = 1;
@@ -141,7 +126,6 @@ int executeProcess(int argc, char** argv) {
         snprintf(processName, MAX_FILE_NAME_LENGTH, "./%s", argv[0]);
         argv[0] = strdup(processName); 
     }
-    print("%s\n", argv[0]);
     
     pid_t pid = vfork(); 
     if (pid < 0) {
@@ -163,6 +147,13 @@ int executeProcess(int argc, char** argv) {
             close(devNull);
         }
         execvp(argv[0], argv);
+
+        snprintf(systemProcessPath, MAX_FILE_NAME_LENGTH, "/usr/bin/%s", argv[0] + 2);
+        execvp(systemProcessPath, argv);
+
+        snprintf(systemProcessPath, MAX_FILE_NAME_LENGTH, "/bin/%s", argv[0] + 2);
+        execvp(systemProcessPath, argv);
+
         printError("execvp failed");
         return -1;
     } 
@@ -171,7 +162,6 @@ int executeProcess(int argc, char** argv) {
             print("Parent process: Child process running in background (PID: %d)\n", pid);
         } else {
             wait(NULL);
-            print("Parent process: Child process finished\n");
             return -1;
         }
         return pid;
@@ -183,8 +173,10 @@ int executeProcess(int argc, char** argv) {
 
 
 
-Terminal::Terminal() 
+Terminal::Terminal(int argc, char** argv) 
 {
+  
+
     size = 0;
     is_running = true;
     tipsBuffer = line.getTipsBuffer();
@@ -213,25 +205,25 @@ void Terminal::processCommand()
     //    printf("%s\n", in.Args[i]);
     //}
 
-    if(strcmp(in.Args[0], "ls") == 0) {
-        if(in.ArgC == 2) {
-            custom_ls(in.Args[1], tipsBuffer, false);
-            return;
-        }
-        custom_ls("./", tipsBuffer, false);
-    }
-    else if(strcmp(in.Args[0], "cat")== 0) {
-        if(in.ArgC  == 1) {
-            print("\tUsage: cat <filepath>\n");
-            return;
-        }
-        custom_cat(in.Args[1]);
-    }
-    else if(strcmp(in.Args[0], "nice") == 0) {
-        if(size == 0) {return;}
-        changeProcessPriority(ids[0], 0);
-    }
-    else if(strcmp(in.Args[0], "cd") == 0) {
+    // if(strcmp(in.Args[0], "ls") == 0) {
+    //     if(in.ArgC == 2) {
+    //         custom_ls(in.Args[1], tipsBuffer, false);
+    //         return;
+    //     }
+    //     custom_ls("./", tipsBuffer, false);
+    // }
+    // else if(strcmp(in.Args[0], "cat")== 0) {
+    //     if(in.ArgC  == 1) {
+    //         print("\tUsage: cat <filepath>\n");
+    //         return;
+    //     }
+    //     custom_cat(in.Args[1]);
+    // }
+    // else if(strcmp(in.Args[0], "nice") == 0) {
+    //     if(size == 0) {return;}
+    //     changeProcessPriority(ids[0], 0);
+    // }
+    if(strcmp(in.Args[0], "cd") == 0) {
         if(in.ArgC  == 1) {
             print("\tUsage: cd <path>\n");
             return;
@@ -248,11 +240,11 @@ void Terminal::processCommand()
             killProcess(id, signal, ids, size);
         }
     }
-    else if(strcmp(in.Args[0], "ps") == 0) {
-        for(int i = 0; i < size; i++) {
-            print("%d) %d\n", i, ids[i]);
-        }
-    }
+    // else if(strcmp(in.Args[0], "ps") == 0) {
+    //     for(int i = 0; i < size; i++) {
+    //         print("%d) %d\n", i, ids[i]);
+    //     }
+    // }
     else {
         int id = executeProcess(in.ArgC, in.Args);
         if(id != -1) {
